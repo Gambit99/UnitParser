@@ -70,35 +70,37 @@ whitespace ~ [\s]+
 
 END_DEFN
 
+my $grammar = Marpa::R2::Scanless::G->new( { source => \$defn } );
+
 sub print_tiered 
 {
     my ($level, $r) = @_;
     if (ref($r) eq 'ARRAY') { # It's either a production expansion
-	my @arr = @$r;
-	my $name = $arr[0];
-	my $x = $arr[1];
-	my @rest = @arr[1..$#arr];
-	print(' ' x $level . $name . "\n");
-	for my $i (1..$#arr) {
-	    print_tiered($level+1,$arr[$i]);
-	}
+		my @arr = @$r;
+		my $name = $arr[0];
+		my $x = $arr[1];
+		my @rest = @arr[1..$#arr];
+		print(' ' x $level . $name . " = ");
+		for my $i (1..$#arr) {
+			print_tiered($level+1,$arr[$i]);
+		}
     } elsif (ref($r) eq 'HASH') {
-	my %h = %$r;
-	print("{\n");
-	my @sortedkeys = sort { $a cmp $b  } keys %h;
-	for my $k (@sortedkeys) {
-	    next unless $k;
-	    my $v = $h{$k};
-	    if (ref($v) eq 'HASH') {
-		print(' ' x ($level+2) . "$k = ");
-		print_tiered($level+2,$v);
-	    } elsif ($v) {
-		print(' ' x ($level+2) . "$k = $v\n");
-	    }
-	}
-	print(' ' x $level . "}\n");
+		my %h = %$r;
+		print("{\n");
+		my @sortedkeys = sort { $a cmp $b  } keys %h;
+		for my $k (@sortedkeys) {
+			next unless $k;
+			my $v = $h{$k};
+			if (ref($v) eq 'HASH') {
+				print(' ' x ($level+2) . "$k = ");
+				print_tiered($level+2,$v);
+			} elsif ($v) {
+				print(' ' x ($level+2) . "$k = $v\n");
+			}
+		}
+		print(' ' x $level . "}\n");
     } else { # Or a terminal
-	print(' ' x $level . $r . "\n")
+		print(' ' x $level . $r . "\n")
     }
 }
 
@@ -108,7 +110,7 @@ sub parseBlock {
     my @lst = @$stmts;
     for $pair (@lst) {
 #	printf("key[%s] = value[%s]\n", $$pair[0], $$pair[1]);
-	$tbl{$$pair[0]} = $$pair[1];
+		$tbl{$$pair[0]} = $$pair[1];
     }
     return \%tbl;
 }
@@ -129,8 +131,6 @@ sub joinEm {
     return $r;    
 }
 
-my $grammar = Marpa::R2::Scanless::G->new( { source => \$defn } );
-my $recce = Marpa::R2::Scanless::R->new( { grammar => $grammar, semantics_package => 'AnnihilationParser' } );
 
 # my $input = <<'END_INPUT';
 # return {
@@ -151,12 +151,12 @@ my $recce = Marpa::R2::Scanless::R->new( { grammar => $grammar, semantics_packag
 sub AnnihilationParser::readBuf 
 {
     my($buff,$print) = @_;
+	my $recce = Marpa::R2::Scanless::R->new( { grammar => $grammar, semantics_package => 'AnnihilationParser' } );
     $recce->read(\$buff);
     my $result = $recce->value();
-#print("Result is a " . ref($$result). "\n");
     $print //= 0;
     if ($print) {
-	print_tiered(0,$$result);
+		print_tiered(0,$$result);
     }
     return $$result;
 }
